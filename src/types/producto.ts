@@ -6,6 +6,7 @@ export interface Producto {
   description: string | null;
   currency: string;
   codigo_barra: string | null;
+  stock: number;
 }
 
 export interface ProductoInput {
@@ -15,4 +16,5 @@ export interface ProductoInput {
   description?: string;
   currency: string;
   codigo_barra?: string;
+  stock?: number;
 }

@@ -12,10 +12,15 @@ export interface ClienteInput {
 }
 
 export interface ItemVenta {
+  id: number;
   name: string;
   cantidad: number;
   precio: number;
   currency: "UYU" | "USD";
+}
+
+export interface VentaContadoInput {
+  items: ItemVenta[];
 }
 
 export interface VentaCredito {

@@ -51,12 +51,12 @@ export async function obtenerPorId(req: Request, res: Response) {
 }
 
 export async function crear(req: Request, res: Response) {
-  const { name, price, image, description, currency, codigo_barra } =
+  const { name, price, image, description, currency, codigo_barra, stock } =
     req.body as ProductoInput;
   try {
     const [result] = await pool.query<ResultSetHeader>(
-      `INSERT INTO ${TABLA} (name, price, image, description, currency, codigo_barra) VALUES (?, ?, ?, ?, ?, ?)`,
-      [name, price, image, description, currency, codigo_barra || null]
+      `INSERT INTO ${TABLA} (name, price, image, description, currency, codigo_barra, stock) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [name, price, image, description, currency, codigo_barra || null, stock || 0]
     );
     res.json({
       id: result.insertId,
@@ -66,6 +66,7 @@ export async function crear(req: Request, res: Response) {
       description,
       currency,
       codigo_barra,
+      stock: stock || 0,
     });
   } catch (err) {
     console.error("Error al insertar producto:", (err as Error).message);
@@ -75,18 +76,18 @@ export async function crear(req: Request, res: Response) {
 
 export async function actualizar(req: Request, res: Response) {
   const { id } = req.params;
-  const { name, price, image, description, currency, codigo_barra } =
+  const { name, price, image, description, currency, codigo_barra, stock } =
     req.body as ProductoInput;
   try {
     const [result] = await pool.query<ResultSetHeader>(
-      `UPDATE ${TABLA} SET name = ?, price = ?, image = ?, description = ?, currency = ?, codigo_barra = ? WHERE id = ?`,
-      [name, price, image, description, currency, codigo_barra || null, id]
+      `UPDATE ${TABLA} SET name = ?, price = ?, image = ?, description = ?, currency = ?, codigo_barra = ?, stock = ? WHERE id = ?`,
+      [name, price, image, description, currency, codigo_barra || null, stock || 0, id]
     );
     if (result.affectedRows === 0) {
       res.status(404).json({ error: "Producto no encontrado" });
       return;
     }
-    res.json({ id, name, price, image, description, currency, codigo_barra });
+    res.json({ id, name, price, image, description, currency, codigo_barra, stock });
   } catch (err) {
     console.error("Error al actualizar producto:", (err as Error).message);
     res.status(500).json({ error: "Error al actualizar producto" });
