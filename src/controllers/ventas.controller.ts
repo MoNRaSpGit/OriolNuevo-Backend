@@ -2,7 +2,8 @@ import type { Request, Response } from "express";
 import type { PoolConnection, ResultSetHeader } from "mysql2/promise";
 import { pool } from "../config/db";
 import { TASA_DOLAR } from "../config/constants";
-import type { ItemVenta, VentaContadoInput, VentaCreditoInput } from "../types/cliente";
+import { ahoraUtc } from "../utils/fechas";
+import type { ItemVenta, VentaContadoInput, VentaCreditoInput } from "../types/venta";
 
 async function descontarStock(connection: PoolConnection, items: ItemVenta[]) {
   for (const item of items) {
@@ -24,8 +25,8 @@ export async function crearVentaCredito(req: Request, res: Response) {
     await connection.beginTransaction();
 
     const [result] = await connection.query<ResultSetHeader>(
-      `INSERT INTO oriolnuevo_ventas_credito (cliente_id, total_pesos, total_dolares, detalle) VALUES (?, ?, ?, ?)`,
-      [cliente_id, total_pesos, total_dolares, JSON.stringify(items)]
+      `INSERT INTO oriolnuevo_ventas (cliente_id, metodo_pago, total_pesos, total_dolares, detalle, fecha) VALUES (?, 'credito', ?, ?, ?, ?)`,
+      [cliente_id, total_pesos, total_dolares, JSON.stringify(items), ahoraUtc()]
     );
 
     const [updateResult] = await connection.query<ResultSetHeader>(
@@ -45,6 +46,7 @@ export async function crearVentaCredito(req: Request, res: Response) {
     res.json({
       id: result.insertId,
       cliente_id,
+      metodo_pago: "credito",
       total_pesos,
       total_dolares,
       items,
@@ -59,12 +61,20 @@ export async function crearVentaCredito(req: Request, res: Response) {
 }
 
 export async function crearVentaContado(req: Request, res: Response) {
-  const { items } = req.body as VentaContadoInput;
+  const { metodo_pago, total_pesos, total_dolares, items } =
+    req.body as VentaContadoInput;
   const connection = await pool.getConnection();
 
   try {
     await connection.beginTransaction();
+
+    await connection.query<ResultSetHeader>(
+      `INSERT INTO oriolnuevo_ventas (cliente_id, metodo_pago, total_pesos, total_dolares, detalle, fecha) VALUES (NULL, ?, ?, ?, ?, ?)`,
+      [metodo_pago, total_pesos, total_dolares, JSON.stringify(items), ahoraUtc()]
+    );
+
     await descontarStock(connection, items);
+
     await connection.commit();
     res.json({ ok: true });
   } catch (err) {
