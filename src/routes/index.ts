@@ -5,6 +5,7 @@ import clientesRoutes from "./clientes.routes";
 import ventasRoutes from "./ventas.routes";
 import pagosRoutes from "./pagos.routes";
 import panelRoutes from "./panel.routes";
+import configRoutes from "./config.routes";
 import { requireApiKey } from "../middleware/apiKey";
 
 const router = Router();
@@ -19,5 +20,6 @@ router.use("/clientes", clientesRoutes);
 router.use("/ventas", ventasRoutes);
 router.use("/pagos", pagosRoutes);
 router.use("/panel", panelRoutes);
+router.use("/config", configRoutes);
 
 export default router;

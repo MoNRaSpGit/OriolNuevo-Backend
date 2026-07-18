@@ -2,7 +2,7 @@ export interface Cliente {
   id: number;
   nombre: string;
   telefono: string | null;
-  deuda: number;
+  deuda: string; // DECIMAL de MySQL: mysql2 lo devuelve como string, no como number
   created_at: string;
 }
 
