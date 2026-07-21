@@ -87,6 +87,10 @@ export async function crear(req: Request, res: Response) {
       stock: stock || 0,
     });
   } catch (err) {
+    if ((err as { code?: string }).code === "ER_DUP_ENTRY") {
+      res.status(409).json({ error: "Ya existe un producto con ese código de barra" });
+      return;
+    }
     console.error("Error al insertar producto:", (err as Error).message);
     res.status(500).json({ error: "Error al insertar producto" });
   }
@@ -107,6 +111,10 @@ export async function actualizar(req: Request, res: Response) {
     }
     res.json({ id, name, price, image, description, currency, codigo_barra, stock });
   } catch (err) {
+    if ((err as { code?: string }).code === "ER_DUP_ENTRY") {
+      res.status(409).json({ error: "Ya existe un producto con ese código de barra" });
+      return;
+    }
     console.error("Error al actualizar producto:", (err as Error).message);
     res.status(500).json({ error: "Error al actualizar producto" });
   }
