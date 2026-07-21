@@ -6,6 +6,7 @@ import { productoSchema } from "../validators/producto.schema";
 const router = Router();
 
 router.get("/", productosController.listar);
+router.get("/buscar", productosController.buscarPorNombre);
 router.get("/codigo/:codigoBarra", productosController.obtenerPorCodigoBarra);
 router.get("/:id", productosController.obtenerPorId);
 router.post("/", validarBody(productoSchema), productosController.crear);

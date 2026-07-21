@@ -33,6 +33,24 @@ export async function obtenerPorCodigoBarra(req: Request, res: Response) {
   }
 }
 
+export async function buscarPorNombre(req: Request, res: Response) {
+  try {
+    const query = String(req.query.q || "").trim();
+    if (query.length < 2) {
+      res.json([]);
+      return;
+    }
+    const [rows] = await pool.query(
+      `SELECT * FROM ${TABLA} WHERE name LIKE ? ORDER BY name LIMIT 10`,
+      [`%${query}%`]
+    );
+    res.json(rows as Producto[]);
+  } catch (err) {
+    console.error("Error al buscar por nombre:", (err as Error).message);
+    res.status(500).json({ error: "Error al buscar productos" });
+  }
+}
+
 export async function obtenerPorId(req: Request, res: Response) {
   try {
     const [rows] = await pool.query(`SELECT * FROM ${TABLA} WHERE id = ?`, [
