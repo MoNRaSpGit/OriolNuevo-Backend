@@ -3,6 +3,15 @@ export interface TotalPorMoneda {
   dolares: number;
 }
 
+export interface MovimientoPanel {
+  tipo: "venta" | "pago";
+  descripcion: string;
+  cantidad: number | null;
+  monto: number;
+  currency: "UYU" | "USD" | null;
+  fecha: string;
+}
+
 export interface PanelHoy {
   totalTarjeta: TotalPorMoneda;
   totalEfectivo: TotalPorMoneda;
@@ -10,4 +19,6 @@ export interface PanelHoy {
   totalPagos: number;
   cambio: number;
   caja: number;
+  ganancias: number;
+  movimientos: MovimientoPanel[];
 }

@@ -2,14 +2,30 @@ import type { Request, Response } from "express";
 import { pool } from "../config/db";
 import { TASA_DOLAR } from "../config/constants";
 import { rangoHoyUruguay } from "../utils/fechas";
-import type { MetodoPago } from "../types/venta";
-import type { PanelHoy, TotalPorMoneda } from "../types/panel";
+import type { ItemVenta, MetodoPago } from "../types/venta";
+import type { MovimientoPanel, PanelHoy, TotalPorMoneda } from "../types/panel";
 
 interface FilaTotalPorMetodo {
   metodo_pago: MetodoPago;
   pesos: string | null;
   dolares: string | null;
 }
+
+interface FilaVentaDetalle {
+  detalle: string;
+  fecha: Date;
+}
+
+interface FilaPagoDetalle {
+  valor: string;
+  detalle: string;
+  fecha: Date;
+}
+
+// El 30% se resta de la ganancia bruta (ventas del día - pagos a
+// proveedores) como estimación de gastos/impuestos, a pedido del
+// usuario.
+const PORCENTAJE_GANANCIA_NETA = 0.7;
 
 export async function obtenerHoy(_req: Request, res: Response) {
   try {
@@ -50,6 +66,60 @@ export async function obtenerHoy(_req: Request, res: Response) {
       totales.efectivo.pesos + totales.efectivo.dolares * TASA_DOLAR;
     const caja = cambio + efectivoEquivalente - totalPagos;
 
+    const ventasTotalEquivalente =
+      totales.efectivo.pesos +
+      totales.efectivo.dolares * TASA_DOLAR +
+      totales.tarjeta.pesos +
+      totales.tarjeta.dolares * TASA_DOLAR +
+      totales.credito.pesos +
+      totales.credito.dolares * TASA_DOLAR;
+    const gananciaBruta = ventasTotalEquivalente - totalPagos;
+    const ganancias = gananciaBruta * PORCENTAJE_GANANCIA_NETA;
+
+    const [ventasDetalleRows] = await pool.query(
+      `SELECT detalle, fecha FROM oriolnuevo_ventas WHERE fecha >= ? AND fecha < ? ORDER BY fecha DESC`,
+      [inicio, fin]
+    );
+    const [pagosDetalleRows] = await pool.query(
+      `SELECT valor, detalle, fecha FROM oriolnuevo_pagos WHERE fecha >= ? AND fecha < ? ORDER BY fecha DESC`,
+      [inicio, fin]
+    );
+
+    const movimientos: MovimientoPanel[] = [];
+
+    for (const venta of ventasDetalleRows as FilaVentaDetalle[]) {
+      const fechaIso = venta.fecha.toISOString();
+      let items: ItemVenta[] = [];
+      try {
+        items = JSON.parse(venta.detalle);
+      } catch {
+        items = [];
+      }
+      for (const item of items) {
+        movimientos.push({
+          tipo: "venta",
+          descripcion: item.name,
+          cantidad: item.cantidad,
+          monto: item.precio * item.cantidad,
+          currency: item.currency,
+          fecha: fechaIso,
+        });
+      }
+    }
+
+    for (const pago of pagosDetalleRows as FilaPagoDetalle[]) {
+      movimientos.push({
+        tipo: "pago",
+        descripcion: pago.detalle,
+        cantidad: null,
+        monto: Number(pago.valor),
+        currency: null,
+        fecha: pago.fecha.toISOString(),
+      });
+    }
+
+    movimientos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
     const panel: PanelHoy = {
       totalTarjeta: totales.tarjeta,
       totalEfectivo: totales.efectivo,
@@ -57,6 +127,8 @@ export async function obtenerHoy(_req: Request, res: Response) {
       totalPagos,
       cambio,
       caja,
+      ganancias,
+      movimientos,
     };
 
     res.json(panel);
