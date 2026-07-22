@@ -66,14 +66,10 @@ export async function obtenerHoy(_req: Request, res: Response) {
       totales.efectivo.pesos + totales.efectivo.dolares * TASA_DOLAR;
     const caja = cambio + efectivoEquivalente - totalPagos;
 
-    const ventasTotalEquivalente =
-      totales.efectivo.pesos +
-      totales.efectivo.dolares * TASA_DOLAR +
-      totales.tarjeta.pesos +
-      totales.tarjeta.dolares * TASA_DOLAR +
-      totales.credito.pesos +
-      totales.credito.dolares * TASA_DOLAR;
-    const gananciaBruta = ventasTotalEquivalente - totalPagos;
+    // "Ventas del día" y la ganancia se calculan solo con efectivo:
+    // es la plata que realmente entró a la caja física, a diferencia
+    // de tarjeta/crédito que no suman al efectivo disponible hoy.
+    const gananciaBruta = efectivoEquivalente - totalPagos;
     const ganancias = gananciaBruta * PORCENTAJE_GANANCIA_NETA;
 
     const [ventasDetalleRows] = await pool.query(
@@ -127,7 +123,7 @@ export async function obtenerHoy(_req: Request, res: Response) {
       totalPagos,
       cambio,
       caja,
-      ventasDelDia: ventasTotalEquivalente,
+      ventasDelDia: efectivoEquivalente,
       ganancias,
       movimientos,
     };
