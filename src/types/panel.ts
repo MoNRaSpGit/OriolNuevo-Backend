@@ -19,6 +19,7 @@ export interface PanelHoy {
   totalPagos: number;
   cambio: number;
   caja: number;
+  ventasDelDia: number;
   ganancias: number;
   movimientos: MovimientoPanel[];
 }

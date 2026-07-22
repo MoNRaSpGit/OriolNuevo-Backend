@@ -127,6 +127,7 @@ export async function obtenerHoy(_req: Request, res: Response) {
       totalPagos,
       cambio,
       caja,
+      ventasDelDia: ventasTotalEquivalente,
       ganancias,
       movimientos,
     };
