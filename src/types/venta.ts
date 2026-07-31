@@ -30,4 +30,5 @@ export interface VentaContadoInput {
   total_pesos: number;
   total_dolares: number;
   items: ItemVenta[];
+  cliente_id?: number;
 }

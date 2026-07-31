@@ -20,4 +20,8 @@ export const ventaContadoSchema = z.object({
   total_pesos: z.number().nonnegative(),
   total_dolares: z.number().nonnegative(),
   items: z.array(itemVentaSchema).min(1, "Debe incluir al menos un producto"),
+  // Opcional: permite guardar a qué cliente se le vendió (sin que la venta
+  // sea a crédito), para poder reimprimir su boleta después. No afecta la
+  // deuda — eso solo pasa en ventaCreditoSchema.
+  cliente_id: z.number().int().positive().optional(),
 });

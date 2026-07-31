@@ -61,7 +61,7 @@ export async function crearVentaCredito(req: Request, res: Response) {
 }
 
 export async function crearVentaContado(req: Request, res: Response) {
-  const { metodo_pago, total_pesos, total_dolares, items } =
+  const { metodo_pago, total_pesos, total_dolares, items, cliente_id } =
     req.body as VentaContadoInput;
   const connection = await pool.getConnection();
 
@@ -69,8 +69,8 @@ export async function crearVentaContado(req: Request, res: Response) {
     await connection.beginTransaction();
 
     await connection.query<ResultSetHeader>(
-      `INSERT INTO oriolnuevo_ventas (cliente_id, metodo_pago, total_pesos, total_dolares, detalle, fecha) VALUES (NULL, ?, ?, ?, ?, ?)`,
-      [metodo_pago, total_pesos, total_dolares, JSON.stringify(items), ahoraUtc()]
+      `INSERT INTO oriolnuevo_ventas (cliente_id, metodo_pago, total_pesos, total_dolares, detalle, fecha) VALUES (?, ?, ?, ?, ?, ?)`,
+      [cliente_id || null, metodo_pago, total_pesos, total_dolares, JSON.stringify(items), ahoraUtc()]
     );
 
     await descontarStock(connection, items);
