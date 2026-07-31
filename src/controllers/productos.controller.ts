@@ -5,9 +5,15 @@ import type { Producto, ProductoInput } from "../types/producto";
 
 const TABLA = "oriolnuevo_prodcutos";
 
+// La imagen (columna `image`, base64 heredado de la tabla vieja) nunca se
+// usa en la UI — se dejó de pedir/guardar por API para no mandar varios MB
+// de datos innecesarios en cada listado/búsqueda. La columna sigue
+// existiendo en la BDD, simplemente no forma parte del contrato de la API.
+const COLUMNAS = "id, name, price, description, currency, codigo_barra, stock";
+
 export async function listar(_req: Request, res: Response) {
   try {
-    const [rows] = await pool.query(`SELECT * FROM ${TABLA}`);
+    const [rows] = await pool.query(`SELECT ${COLUMNAS} FROM ${TABLA}`);
     res.json(rows as Producto[]);
   } catch (err) {
     console.error("Error al obtener productos:", (err as Error).message);
@@ -18,7 +24,7 @@ export async function listar(_req: Request, res: Response) {
 export async function obtenerPorCodigoBarra(req: Request, res: Response) {
   try {
     const [rows] = await pool.query(
-      `SELECT * FROM ${TABLA} WHERE codigo_barra = ?`,
+      `SELECT ${COLUMNAS} FROM ${TABLA} WHERE codigo_barra = ?`,
       [req.params.codigoBarra]
     );
     const results = rows as Producto[];
@@ -41,7 +47,7 @@ export async function buscarPorNombre(req: Request, res: Response) {
       return;
     }
     const [rows] = await pool.query(
-      `SELECT * FROM ${TABLA} WHERE name LIKE ? ORDER BY name LIMIT 10`,
+      `SELECT ${COLUMNAS} FROM ${TABLA} WHERE name LIKE ? ORDER BY name LIMIT 20`,
       [`%${query}%`]
     );
     res.json(rows as Producto[]);
@@ -53,7 +59,7 @@ export async function buscarPorNombre(req: Request, res: Response) {
 
 export async function obtenerPorId(req: Request, res: Response) {
   try {
-    const [rows] = await pool.query(`SELECT * FROM ${TABLA} WHERE id = ?`, [
+    const [rows] = await pool.query(`SELECT ${COLUMNAS} FROM ${TABLA} WHERE id = ?`, [
       req.params.id,
     ]);
     const results = rows as Producto[];
@@ -69,18 +75,17 @@ export async function obtenerPorId(req: Request, res: Response) {
 }
 
 export async function crear(req: Request, res: Response) {
-  const { name, price, image, description, currency, codigo_barra, stock } =
+  const { name, price, description, currency, codigo_barra, stock } =
     req.body as ProductoInput;
   try {
     const [result] = await pool.query<ResultSetHeader>(
-      `INSERT INTO ${TABLA} (name, price, image, description, currency, codigo_barra, stock) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [name, price, image, description, currency, codigo_barra || null, stock || 0]
+      `INSERT INTO ${TABLA} (name, price, description, currency, codigo_barra, stock) VALUES (?, ?, ?, ?, ?, ?)`,
+      [name, price, description, currency, codigo_barra || null, stock || 0]
     );
     res.json({
       id: result.insertId,
       name,
       price,
-      image,
       description,
       currency,
       codigo_barra,
@@ -98,18 +103,18 @@ export async function crear(req: Request, res: Response) {
 
 export async function actualizar(req: Request, res: Response) {
   const { id } = req.params;
-  const { name, price, image, description, currency, codigo_barra, stock } =
+  const { name, price, description, currency, codigo_barra, stock } =
     req.body as ProductoInput;
   try {
     const [result] = await pool.query<ResultSetHeader>(
-      `UPDATE ${TABLA} SET name = ?, price = ?, image = ?, description = ?, currency = ?, codigo_barra = ?, stock = ? WHERE id = ?`,
-      [name, price, image, description, currency, codigo_barra || null, stock || 0, id]
+      `UPDATE ${TABLA} SET name = ?, price = ?, description = ?, currency = ?, codigo_barra = ?, stock = ? WHERE id = ?`,
+      [name, price, description, currency, codigo_barra || null, stock || 0, id]
     );
     if (result.affectedRows === 0) {
       res.status(404).json({ error: "Producto no encontrado" });
       return;
     }
-    res.json({ id, name, price, image, description, currency, codigo_barra, stock });
+    res.json({ id, name, price, description, currency, codigo_barra, stock });
   } catch (err) {
     if ((err as { code?: string }).code === "ER_DUP_ENTRY") {
       res.status(409).json({ error: "Ya existe un producto con ese código de barra" });
