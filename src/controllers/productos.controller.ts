@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import type { ResultSetHeader } from "mysql2";
 import { pool } from "../config/db";
-import type { Producto, ProductoInput } from "../types/producto";
+import type { Producto, ProductoInput, StockInput } from "../types/producto";
 
 const TABLA = "oriolnuevo_prodcutos";
 
@@ -9,7 +9,7 @@ const TABLA = "oriolnuevo_prodcutos";
 // usa en la UI — se dejó de pedir/guardar por API para no mandar varios MB
 // de datos innecesarios en cada listado/búsqueda. La columna sigue
 // existiendo en la BDD, simplemente no forma parte del contrato de la API.
-const COLUMNAS = "id, name, price, description, currency, codigo_barra, stock";
+const COLUMNAS = "id, name, price, description, currency, codigo_barra, stock, stock_minimo";
 
 export async function listar(_req: Request, res: Response) {
   try {
@@ -90,6 +90,7 @@ export async function crear(req: Request, res: Response) {
       currency,
       codigo_barra,
       stock: stock || 0,
+      stock_minimo: null,
     });
   } catch (err) {
     if ((err as { code?: string }).code === "ER_DUP_ENTRY") {
@@ -114,7 +115,8 @@ export async function actualizar(req: Request, res: Response) {
       res.status(404).json({ error: "Producto no encontrado" });
       return;
     }
-    res.json({ id, name, price, description, currency, codigo_barra, stock });
+    const [rows] = await pool.query(`SELECT ${COLUMNAS} FROM ${TABLA} WHERE id = ?`, [id]);
+    res.json((rows as Producto[])[0]);
   } catch (err) {
     if ((err as { code?: string }).code === "ER_DUP_ENTRY") {
       res.status(409).json({ error: "Ya existe un producto con ese código de barra" });
@@ -122,6 +124,36 @@ export async function actualizar(req: Request, res: Response) {
     }
     console.error("Error al actualizar producto:", (err as Error).message);
     res.status(500).json({ error: "Error al actualizar producto" });
+  }
+}
+
+export async function actualizarStock(req: Request, res: Response) {
+  const { id } = req.params;
+  const { stock, stock_minimo } = req.body as StockInput;
+  const sets: string[] = [];
+  const params: (number | null)[] = [];
+  if (stock !== undefined) {
+    sets.push("stock = ?");
+    params.push(stock);
+  }
+  if (stock_minimo !== undefined) {
+    sets.push("stock_minimo = ?");
+    params.push(stock_minimo);
+  }
+  try {
+    const [result] = await pool.query<ResultSetHeader>(
+      `UPDATE ${TABLA} SET ${sets.join(", ")} WHERE id = ?`,
+      [...params, id]
+    );
+    if (result.affectedRows === 0) {
+      res.status(404).json({ error: "Producto no encontrado" });
+      return;
+    }
+    const [rows] = await pool.query(`SELECT ${COLUMNAS} FROM ${TABLA} WHERE id = ?`, [id]);
+    res.json((rows as Producto[])[0]);
+  } catch (err) {
+    console.error("Error al actualizar stock:", (err as Error).message);
+    res.status(500).json({ error: "Error al actualizar el stock" });
   }
 }
 

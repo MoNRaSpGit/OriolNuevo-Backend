@@ -6,6 +6,7 @@ export interface Producto {
   currency: string;
   codigo_barra: string | null;
   stock: number;
+  stock_minimo: number | null;
 }
 
 export interface ProductoInput {
@@ -15,4 +16,9 @@ export interface ProductoInput {
   currency: string;
   codigo_barra?: string;
   stock?: number;
+}
+
+export interface StockInput {
+  stock?: number;
+  stock_minimo?: number | null;
 }
