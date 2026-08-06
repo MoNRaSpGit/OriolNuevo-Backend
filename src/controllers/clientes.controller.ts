@@ -36,13 +36,19 @@ export async function obtenerPorId(req: Request, res: Response) {
 }
 
 export async function crear(req: Request, res: Response) {
-  const { nombre, telefono } = req.body as ClienteInput;
+  const { nombre, telefono, cedula } = req.body as ClienteInput;
   try {
     const [result] = await pool.query<ResultSetHeader>(
-      `INSERT INTO ${TABLA} (nombre, telefono, created_at) VALUES (?, ?, ?)`,
-      [nombre, telefono || null, ahoraUtc()]
+      `INSERT INTO ${TABLA} (nombre, telefono, cedula, created_at) VALUES (?, ?, ?, ?)`,
+      [nombre, telefono || null, cedula || null, ahoraUtc()]
     );
-    res.json({ id: result.insertId, nombre, telefono: telefono || null, deuda: "0.00" });
+    res.json({
+      id: result.insertId,
+      nombre,
+      telefono: telefono || null,
+      cedula: cedula || null,
+      deuda: "0.00",
+    });
   } catch (err) {
     console.error("Error al crear cliente:", (err as Error).message);
     res.status(500).json({ error: "Error al crear cliente" });
