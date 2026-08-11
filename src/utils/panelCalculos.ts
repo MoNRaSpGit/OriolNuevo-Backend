@@ -1,5 +1,5 @@
 import { TASA_DOLAR } from "../config/constants";
-import type { ItemVenta, MetodoPago } from "../types/venta";
+import type { ItemVenta } from "../types/venta";
 import type { MovimientoPanel, TotalPorMoneda } from "../types/panel";
 
 // El 30% se resta de la ganancia bruta (efectivo del día - pagos a
@@ -24,9 +24,6 @@ export function calcularGanancia(efectivoEquivalente: number, totalPagos: number
 }
 
 interface FilaVentaDetalle {
-  id: number;
-  metodo_pago: MetodoPago;
-  cliente_id: number | null;
   detalle: string;
   fecha: Date;
 }
@@ -59,9 +56,6 @@ export function armarMovimientos(
         monto: item.precio * item.cantidad,
         currency: item.currency,
         fecha: fechaIso,
-        ventaId: venta.id,
-        metodoPago: venta.metodo_pago,
-        clienteId: venta.cliente_id,
       });
     }
   }
@@ -74,9 +68,6 @@ export function armarMovimientos(
       monto: Number(pago.valor),
       currency: null,
       fecha: pago.fecha.toISOString(),
-      ventaId: null,
-      metodoPago: null,
-      clienteId: null,
     });
   }
 

@@ -20,13 +20,14 @@ export async function crearVentaCredito(req: Request, res: Response) {
 
   const deudaEquivalente = total_pesos + total_dolares * TASA_DOLAR;
   const connection = await pool.getConnection();
+  const fecha = ahoraUtc();
 
   try {
     await connection.beginTransaction();
 
     const [result] = await connection.query<ResultSetHeader>(
       `INSERT INTO oriolnuevo_ventas (cliente_id, metodo_pago, total_pesos, total_dolares, detalle, fecha) VALUES (?, 'credito', ?, ?, ?, ?)`,
-      [cliente_id, total_pesos, total_dolares, JSON.stringify(items), ahoraUtc()]
+      [cliente_id, total_pesos, total_dolares, JSON.stringify(items), fecha]
     );
 
     const [updateResult] = await connection.query<ResultSetHeader>(
@@ -50,6 +51,7 @@ export async function crearVentaCredito(req: Request, res: Response) {
       total_pesos,
       total_dolares,
       items,
+      fecha,
     });
   } catch (err) {
     await connection.rollback();
@@ -64,19 +66,20 @@ export async function crearVentaContado(req: Request, res: Response) {
   const { metodo_pago, total_pesos, total_dolares, items, cliente_id } =
     req.body as VentaContadoInput;
   const connection = await pool.getConnection();
+  const fecha = ahoraUtc();
 
   try {
     await connection.beginTransaction();
 
-    await connection.query<ResultSetHeader>(
+    const [result] = await connection.query<ResultSetHeader>(
       `INSERT INTO oriolnuevo_ventas (cliente_id, metodo_pago, total_pesos, total_dolares, detalle, fecha) VALUES (?, ?, ?, ?, ?, ?)`,
-      [cliente_id || null, metodo_pago, total_pesos, total_dolares, JSON.stringify(items), ahoraUtc()]
+      [cliente_id || null, metodo_pago, total_pesos, total_dolares, JSON.stringify(items), fecha]
     );
 
     await descontarStock(connection, items);
 
     await connection.commit();
-    res.json({ ok: true });
+    res.json({ id: result.insertId, fecha });
   } catch (err) {
     await connection.rollback();
     console.error("Error al registrar venta de contado:", (err as Error).message);
