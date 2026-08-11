@@ -1,3 +1,5 @@
+import type { MetodoPago } from "./venta";
+
 export interface TotalPorMoneda {
   pesos: number;
   dolares: number;
@@ -10,6 +12,9 @@ export interface MovimientoPanel {
   monto: number;
   currency: "UYU" | "USD" | null;
   fecha: string;
+  ventaId: number | null;
+  metodoPago: MetodoPago | null;
+  clienteId: number | null;
 }
 
 export interface PanelHoy {

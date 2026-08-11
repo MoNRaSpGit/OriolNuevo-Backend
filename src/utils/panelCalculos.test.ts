@@ -44,6 +44,9 @@ describe("armarMovimientos", () => {
   it("expande el detalle JSON de cada venta en un movimiento por item", () => {
     const ventas = [
       {
+        id: 7,
+        metodo_pago: "efectivo" as const,
+        cliente_id: null,
         detalle: JSON.stringify([
           { id: 1, name: "Coca Cola", cantidad: 2, precio: 85, currency: "UYU" },
         ]),
@@ -58,6 +61,8 @@ describe("armarMovimientos", () => {
       cantidad: 2,
       monto: 170,
       currency: "UYU",
+      ventaId: 7,
+      metodoPago: "efectivo",
     });
   });
 
@@ -76,7 +81,13 @@ describe("armarMovimientos", () => {
 
   it("ordena todo por fecha descendente (más reciente primero)", () => {
     const ventas = [
-      { detalle: JSON.stringify([{ id: 1, name: "Viejo", cantidad: 1, precio: 10, currency: "UYU" }]), fecha: fecha2 },
+      {
+        id: 1,
+        metodo_pago: "efectivo" as const,
+        cliente_id: null,
+        detalle: JSON.stringify([{ id: 1, name: "Viejo", cantidad: 1, precio: 10, currency: "UYU" }]),
+        fecha: fecha2,
+      },
     ];
     const pagos = [{ valor: "20", detalle: "Nuevo", fecha: fecha1 }];
     const movimientos = armarMovimientos(ventas, pagos);
@@ -84,7 +95,8 @@ describe("armarMovimientos", () => {
   });
 
   it("no explota si el detalle JSON está corrupto: lo trata como sin items", () => {
-    const ventas = [{ detalle: "{esto no es json valido", fecha: fecha1 }];
+    const ventas = [{ id: 2, metodo_pago: "efectivo" as const,
+        cliente_id: null, detalle: "{esto no es json valido", fecha: fecha1 }];
     const movimientos = armarMovimientos(ventas, []);
     expect(movimientos).toEqual([]);
   });

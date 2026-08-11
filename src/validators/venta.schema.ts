@@ -25,3 +25,17 @@ export const ventaContadoSchema = z.object({
   // deuda — eso solo pasa en ventaCreditoSchema.
   cliente_id: z.number().int().positive().optional(),
 });
+
+// Corrección de una venta ya confirmada (método de pago y/o fecha). El
+// cliente solo es obligatorio si se pasa a crédito y la venta no tenía
+// uno vinculado — esa validación depende del estado actual de la venta,
+// así que se resuelve en el controller, no acá.
+export const ventaActualizarSchema = z
+  .object({
+    metodo_pago: z.enum(["efectivo", "tarjeta", "credito"]).optional(),
+    fecha: z.coerce.date().optional(),
+    cliente_id: z.number().int().positive().optional(),
+  })
+  .refine((data) => data.metodo_pago !== undefined || data.fecha !== undefined, {
+    message: "Debe incluir metodo_pago o fecha",
+  });

@@ -12,6 +12,9 @@ interface FilaTotalPorMetodo {
 }
 
 interface FilaVentaDetalle {
+  id: number;
+  metodo_pago: MetodoPago;
+  cliente_id: number | null;
   detalle: string;
   fecha: Date;
 }
@@ -62,7 +65,7 @@ export async function obtenerHoy(_req: Request, res: Response) {
     const ganancias = calcularGanancia(efectivoEquivalente, totalPagos);
 
     const [ventasDetalleRows] = await pool.query(
-      `SELECT detalle, fecha FROM oriolnuevo_ventas WHERE fecha >= ? AND fecha < ? ORDER BY fecha DESC`,
+      `SELECT id, metodo_pago, cliente_id, detalle, fecha FROM oriolnuevo_ventas WHERE fecha >= ? AND fecha < ? ORDER BY fecha DESC`,
       [inicio, fin]
     );
     const [pagosDetalleRows] = await pool.query(

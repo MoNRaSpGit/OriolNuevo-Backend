@@ -32,3 +32,9 @@ export interface VentaContadoInput {
   items: ItemVenta[];
   cliente_id?: number;
 }
+
+export interface VentaActualizarInput {
+  metodo_pago?: MetodoPago;
+  fecha?: Date;
+  cliente_id?: number;
+}
