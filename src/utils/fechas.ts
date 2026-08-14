@@ -30,3 +30,21 @@ export function rangoHoyUruguay(): { inicio: Date; fin: Date } {
 
   return { inicio, fin };
 }
+
+// Igual que rangoHoyUruguay pero para un mes cualquiera (mes: 1-12), para
+// la vista "Mes". El rango va del día 1 00:00 (Uruguay) al día 1 00:00
+// (Uruguay) del mes siguiente.
+export function rangoMesUruguay(anio: number, mes: number): { inicio: Date; fin: Date } {
+  const inicio = new Date(Date.UTC(anio, mes - 1, 1, 0, 0, 0, 0) + OFFSET_URUGUAY_MS);
+  const fin = new Date(Date.UTC(anio, mes, 1, 0, 0, 0, 0) + OFFSET_URUGUAY_MS);
+  return { inicio, fin };
+}
+
+// Convierte una fecha (guardada en UTC) al día calendario que le
+// correspondía en Uruguay al momento de la venta — mismo criterio que
+// rangoHoyUruguay, para que un día "cierre" a la misma hora real
+// (medianoche en Montevideo) sin importar el reloj/tz del server.
+export function fechaUyYMD(fechaUtc: Date): string {
+  const fechaUruguay = new Date(fechaUtc.getTime() - OFFSET_URUGUAY_MS);
+  return fechaUruguay.toISOString().slice(0, 10);
+}

@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import { pool } from "../config/db";
-import { rangoHoyUruguay } from "../utils/fechas";
+import { rangoHoyUruguay, rangoMesUruguay } from "../utils/fechas";
 import { armarMovimientos, calcularCaja, calcularGanancia, equivalenteEnPesos } from "../utils/panelCalculos";
+import { armarResumenMes } from "../utils/mesCalculos";
 import type { MetodoPago } from "../types/venta";
 import type { PanelHoy, TotalPorMoneda } from "../types/panel";
 
@@ -91,6 +92,31 @@ export async function obtenerHoy(_req: Request, res: Response) {
   } catch (err) {
     console.error("Error al obtener el panel:", (err as Error).message);
     res.status(500).json({ error: "Error al obtener el panel" });
+  }
+}
+
+export async function obtenerMes(req: Request, res: Response) {
+  const anio = Number(req.params.anio);
+  const mes = Number(req.params.mes);
+
+  if (!Number.isInteger(anio) || !Number.isInteger(mes) || mes < 1 || mes > 12) {
+    res.status(400).json({ error: "Año o mes inválido" });
+    return;
+  }
+
+  try {
+    const { inicio, fin } = rangoMesUruguay(anio, mes);
+
+    const [ventasRows] = await pool.query(
+      `SELECT fecha, total_pesos, total_dolares FROM oriolnuevo_ventas WHERE fecha >= ? AND fecha < ?`,
+      [inicio, fin]
+    );
+
+    const resumen = armarResumenMes(anio, mes, ventasRows as { fecha: Date; total_pesos: string; total_dolares: string }[]);
+    res.json(resumen);
+  } catch (err) {
+    console.error("Error al obtener el resumen del mes:", (err as Error).message);
+    res.status(500).json({ error: "Error al obtener el resumen del mes" });
   }
 }
 
