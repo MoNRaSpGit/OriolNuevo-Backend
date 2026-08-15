@@ -75,3 +75,49 @@ export function armarResumenMes(anio: number, mes: number, ventas: FilaVentaMes[
 
   return { anio, mes, semanas, totalPesos, totalDolares };
 }
+
+export interface TotalMes {
+  anio: number;
+  mes: number;
+  totalPesos: number;
+  totalDolares: number;
+}
+
+// Devuelve los últimos `cantidadMeses` (incluyendo el mes actual), en
+// orden cronológico ascendente, para graficar la evolución mes a mes.
+export function ultimosMeses(anioActual: number, mesActual: number, cantidadMeses: number): { anio: number; mes: number }[] {
+  const meses: { anio: number; mes: number }[] = [];
+  let anio = anioActual;
+  let mes = mesActual;
+
+  for (let i = 0; i < cantidadMeses; i++) {
+    meses.unshift({ anio, mes });
+    mes -= 1;
+    if (mes < 1) {
+      mes = 12;
+      anio -= 1;
+    }
+  }
+
+  return meses;
+}
+
+export function armarHistorialMeses(
+  mesesPedidos: { anio: number; mes: number }[],
+  ventas: FilaVentaMes[]
+): TotalMes[] {
+  const totalesPorMes = new Map<string, { pesos: number; dolares: number }>();
+  for (const venta of ventas) {
+    const [anio, mes] = fechaUyYMD(venta.fecha).split("-").map(Number);
+    const clave = `${anio}-${mes}`;
+    const actual = totalesPorMes.get(clave) ?? { pesos: 0, dolares: 0 };
+    actual.pesos += Number(venta.total_pesos) || 0;
+    actual.dolares += Number(venta.total_dolares) || 0;
+    totalesPorMes.set(clave, actual);
+  }
+
+  return mesesPedidos.map(({ anio, mes }) => {
+    const totales = totalesPorMes.get(`${anio}-${mes}`) ?? { pesos: 0, dolares: 0 };
+    return { anio, mes, totalPesos: totales.pesos, totalDolares: totales.dolares };
+  });
+}

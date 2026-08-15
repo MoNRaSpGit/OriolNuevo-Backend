@@ -1,4 +1,4 @@
-import { armarResumenMes } from "./mesCalculos";
+import { armarResumenMes, armarHistorialMeses, ultimosMeses } from "./mesCalculos";
 
 // Las fechas se guardan en UTC pero representan un momento en Uruguay
 // (UTC-3) — para que una venta caiga en el día correcto, la hora UTC de
@@ -49,5 +49,37 @@ describe("armarResumenMes", () => {
     const febrero = armarResumenMes(2026, 2, []); // 2026 no es bisiesto
     const totalDiasFebrero = febrero.semanas.reduce((acc, s) => acc + s.dias.length, 0);
     expect(totalDiasFebrero).toBe(28);
+  });
+});
+
+describe("ultimosMeses", () => {
+  it("devuelve los últimos N meses en orden ascendente, cruzando el fin de año", () => {
+    const meses = ultimosMeses(2026, 2, 4);
+    expect(meses).toEqual([
+      { anio: 2025, mes: 11 },
+      { anio: 2025, mes: 12 },
+      { anio: 2026, mes: 1 },
+      { anio: 2026, mes: 2 },
+    ]);
+  });
+});
+
+describe("armarHistorialMeses", () => {
+  it("suma las ventas de cada mes pedido, y deja en 0 los meses sin ventas", () => {
+    const ventas = [
+      { fecha: fechaDia(2026, 6, 2), total_pesos: "1000", total_dolares: "0" },
+      { fecha: fechaDia(2026, 7, 10), total_pesos: "0", total_dolares: "50" },
+    ];
+    const mesesPedidos = [
+      { anio: 2026, mes: 5 },
+      { anio: 2026, mes: 6 },
+      { anio: 2026, mes: 7 },
+    ];
+    const historial = armarHistorialMeses(mesesPedidos, ventas);
+    expect(historial).toEqual([
+      { anio: 2026, mes: 5, totalPesos: 0, totalDolares: 0 },
+      { anio: 2026, mes: 6, totalPesos: 1000, totalDolares: 0 },
+      { anio: 2026, mes: 7, totalPesos: 0, totalDolares: 50 },
+    ]);
   });
 });

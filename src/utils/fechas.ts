@@ -48,3 +48,9 @@ export function fechaUyYMD(fechaUtc: Date): string {
   const fechaUruguay = new Date(fechaUtc.getTime() - OFFSET_URUGUAY_MS);
   return fechaUruguay.toISOString().slice(0, 10);
 }
+
+// Año y mes "actuales" según el calendario de Uruguay (no el del server).
+export function anioMesActualUruguay(): { anio: number; mes: number } {
+  const [anio, mes] = fechaUyYMD(ahoraUtc()).split("-").map(Number);
+  return { anio, mes };
+}

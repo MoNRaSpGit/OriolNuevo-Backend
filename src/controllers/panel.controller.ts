@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import { pool } from "../config/db";
-import { rangoHoyUruguay, rangoMesUruguay } from "../utils/fechas";
+import { rangoHoyUruguay, rangoMesUruguay, anioMesActualUruguay } from "../utils/fechas";
 import { armarMovimientos, calcularCaja, calcularGanancia, equivalenteEnPesos } from "../utils/panelCalculos";
-import { armarResumenMes } from "../utils/mesCalculos";
+import { armarResumenMes, armarHistorialMeses, ultimosMeses } from "../utils/mesCalculos";
 import type { MetodoPago } from "../types/venta";
 import type { PanelHoy, TotalPorMoneda } from "../types/panel";
 
@@ -117,6 +117,35 @@ export async function obtenerMes(req: Request, res: Response) {
   } catch (err) {
     console.error("Error al obtener el resumen del mes:", (err as Error).message);
     res.status(500).json({ error: "Error al obtener el resumen del mes" });
+  }
+}
+
+const CANTIDAD_MESES_HISTORIAL_MAX = 12;
+
+export async function obtenerHistorialMeses(req: Request, res: Response) {
+  const cantidadPedida = Number(req.query.cantidad) || 6;
+  const cantidadMeses = Math.min(Math.max(cantidadPedida, 1), CANTIDAD_MESES_HISTORIAL_MAX);
+
+  try {
+    const { anio: anioActual, mes: mesActual } = anioMesActualUruguay();
+    const meses = ultimosMeses(anioActual, mesActual, cantidadMeses);
+
+    const { inicio } = rangoMesUruguay(meses[0].anio, meses[0].mes);
+    const { fin } = rangoMesUruguay(meses[meses.length - 1].anio, meses[meses.length - 1].mes);
+
+    const [ventasRows] = await pool.query(
+      `SELECT fecha, total_pesos, total_dolares FROM oriolnuevo_ventas WHERE fecha >= ? AND fecha < ?`,
+      [inicio, fin]
+    );
+
+    const historial = armarHistorialMeses(
+      meses,
+      ventasRows as { fecha: Date; total_pesos: string; total_dolares: string }[]
+    );
+    res.json({ meses: historial });
+  } catch (err) {
+    console.error("Error al obtener el historial de meses:", (err as Error).message);
+    res.status(500).json({ error: "Error al obtener el historial de meses" });
   }
 }
 

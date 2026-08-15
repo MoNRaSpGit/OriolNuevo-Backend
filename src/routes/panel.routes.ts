@@ -7,6 +7,7 @@ const router = Router();
 
 router.get("/hoy", panelController.obtenerHoy);
 router.get("/mes/:anio/:mes", panelController.obtenerMes);
+router.get("/historial-meses", panelController.obtenerHistorialMeses);
 router.put("/cambio", validarBody(cambioSchema), panelController.actualizarCambio);
 
 export default router;
